@@ -27,4 +27,4 @@ geocodeThis str =
     |> Task.perform GeocodingFailure GeocodingSuccess
 ```
 
-Take a look at the [tests](tests/Tests.elm) for examples of building request with other parameters
+Take a look at the [tests](tests/Tests.elm) for examples of building requests with other parameters
