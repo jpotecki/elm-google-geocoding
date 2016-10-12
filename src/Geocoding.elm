@@ -28,7 +28,10 @@ It provides a pipline friendly, builder-like API, and ADTs that map as closely a
 You can start building a request one of two ways:
 
     Geocoding.requestForAddress "77 Battery St." apiKey
-    Geocoding.requestForComponents [("Spain", G.CountryComponent)] apiKey
+    Geocoding.requestForComponents
+      [
+        ("Spain", Geocoding.CountryComponent)
+      ] apiKey
 
 Once you've built your request, calling send will return a Task, which you Perform to generate your own msg types
 
@@ -579,7 +582,11 @@ requestForAddress address =
 
 {-| Build a request for a list of component filters
 
-    Geocoding.requestForComponents [("Spain", Geocoding.CountryComponent), ("Toledo", Geocoding.AdministrativeAreaComponent)] apiKey
+    Geocoding.requestForComponents
+      [
+        ("Spain", Geocoding.CountryComponent)
+      , ("Toledo", Geocoding.AdministrativeAreaComponent)
+      ] apiKey
 -}
 requestForComponents : List ( String, Component ) -> ApiKey -> GeocodingRequest
 requestForComponents components =
@@ -636,8 +643,12 @@ withComponent comp { requestInfo, bounds, language, region, apiKey } =
 
 {-| set the address to a request. If called more than once, the later call overwrites the earlier
 
-    Geocoding.requestForComponents [("Spain", Geocoding.CountryComponent), ("Toledo", Geocoding.AdministrativeAreaComponent)] apiKey
-      |> Geocoding.withAddress "Toledo"
+    Geocoding.requestForComponents
+      [
+        ("Spain", Geocoding.CountryComponent)
+      , ("Toledo", Geocoding.AdministrativeAreaComponent)
+      ] apiKey
+        |> Geocoding.withAddress "Toledo"
 -}
 withAddress : String -> GeocodingRequest -> GeocodingRequest
 withAddress address { requestInfo, bounds, language, region, apiKey } =
