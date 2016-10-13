@@ -22,7 +22,7 @@ type Msg
 
 geocodeThis : String -> Cmd Msg
 geocodeThis str =
-  Geocoding.requestForAddress str apiKey
+  Geocoding.requestForAddress apiKey str
     |> Geocoding.send
     |> Task.perform GeocodingFailure GeocodingSuccess
 ```

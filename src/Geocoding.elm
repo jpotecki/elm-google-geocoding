@@ -27,11 +27,11 @@ It provides a pipline friendly, builder-like API, and ADTs that map as closely a
 
 You can start building a request one of two ways:
 
-    Geocoding.requestForAddress "77 Battery St." apiKey
+    Geocoding.requestForAddress apiKey "77 Battery St."
     Geocoding.requestForComponents
       [
         ("Spain", Geocoding.CountryComponent)
-      ] apiKey
+      ]
 
 Once you've built your request, calling send will return a Task, which you Perform to generate your own msg types
 
@@ -562,7 +562,7 @@ toParameters req =
 
 {-| transform a request into a Task
 
-    Geocoding.requestForAddress "77 Battery St" apiKey
+    Geocoding.requestForAddress apiKey "77 Battery St"
       |> Geocoding.send
       |> Task.perform MyFailureMsg MySuccessMsg
 -}
@@ -573,29 +573,29 @@ send req =
 
 {-| Build a request for an address
 
-    Geocoding.requestForAddress "77 Battery St" apiKey
+    Geocoding.requestForAddress apiKey "77 Battery St"
 -}
-requestForAddress : String -> ApiKey -> GeocodingRequest
-requestForAddress address =
-    GeocodingRequest (Address address) Nothing Nothing Nothing
+requestForAddress : ApiKey -> String -> GeocodingRequest
+requestForAddress key address =
+    GeocodingRequest (Address address) Nothing Nothing Nothing key
 
 
 {-| Build a request for a list of component filters
 
-    Geocoding.requestForComponents
+    Geocoding.requestForComponents apiKey
       [
         ("Spain", Geocoding.CountryComponent)
       , ("Toledo", Geocoding.AdministrativeAreaComponent)
-      ] apiKey
+      ]
 -}
-requestForComponents : List ( String, Component ) -> ApiKey -> GeocodingRequest
-requestForComponents components =
-    GeocodingRequest (Components <| Dict.fromList components) Nothing Nothing Nothing
+requestForComponents : ApiKey -> List ( String, Component )  -> GeocodingRequest
+requestForComponents key components =
+    GeocodingRequest (Components <| Dict.fromList components) Nothing Nothing Nothing key
 
 
 {-| Specify the language for the request
 
-    Geocoding.requestForAddress "77 Battery St" apiKey
+    Geocoding.requestForAddress apiKey "77 Battery St"
       |> Geocoding.withLanguage("FR")
 -}
 withLanguage : String -> GeocodingRequest -> GeocodingRequest
@@ -605,7 +605,7 @@ withLanguage lang { requestInfo, bounds, language, region, apiKey } =
 
 {-| Specify a viewport bias for the request
 
-    Geocoding.requestForAddress "Belmont" apiKey
+    Geocoding.requestForAddress apiKey "Belmont"
       |> Geocoding.withBounds (41, -74) (42, -70)
 -}
 withBounds : ( Float, Float ) -> ( Float, Float ) -> GeocodingRequest -> GeocodingRequest
@@ -619,7 +619,7 @@ withBounds ( swLat, swLng ) ( neLat, neLng ) { requestInfo, bounds, language, re
 
 {-| specify region biasing for request
 
-    Geocoding.requestForAddress "Toledo" apiKey
+    Geocoding.requestForAddress apiKey "Toledo" 
       |> Geocoding.withRegion "ES"
 -}
 withRegion : String -> GeocodingRequest -> GeocodingRequest
@@ -629,7 +629,7 @@ withRegion reg { requestInfo, bounds, language, region, apiKey } =
 
 {-| add a component filter to a request (can be called more than once for a request)
 
-    Geocoding.requestForAddress "Toledo" apiKey
+    Geocoding.requestForAddress apiKey "Toledo" 
       |> Geocoding.withComponent ("Spain", Geocoding.CountryComponent)
 -}
 withComponent : ( String, Component ) -> GeocodingRequest -> GeocodingRequest
@@ -643,11 +643,11 @@ withComponent comp { requestInfo, bounds, language, region, apiKey } =
 
 {-| set the address to a request. If called more than once, the later call overwrites the earlier
 
-    Geocoding.requestForComponents
+    Geocoding.requestForComponents apiKey
       [
         ("Spain", Geocoding.CountryComponent)
       , ("Toledo", Geocoding.AdministrativeAreaComponent)
-      ] apiKey
+      ]
         |> Geocoding.withAddress "Toledo"
 -}
 withAddress : String -> GeocodingRequest -> GeocodingRequest
