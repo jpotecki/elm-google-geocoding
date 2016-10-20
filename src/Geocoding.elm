@@ -8,6 +8,12 @@ module Geocoding
         , withRegion
         , withComponent
         , withAddress
+        , reverseRequestForLatLng
+        , reverseRequestForPlaceId
+        , reverseWithLanguage
+        , withResultTypes
+        , withLocationTypes
+        , sendReverseRequest
         , GeocodingResult
         , Status
         , Viewport
@@ -17,6 +23,7 @@ module Geocoding
         , ComponentType(..)
         , Response
         , requestUrl
+        , reverseRequestUrl
         )
 
 {-| This library is an interface to Google's geocoding service
@@ -33,6 +40,10 @@ You can start building a request one of two ways:
         ("Spain", Geocoding.CountryComponent)
       ]
 
+or for reverse geocoding:
+    Geocoding.reverseRequestForLatLng apiKey ( 37.8489277, -122.4031502 )
+    Geocoding.reverseRequestForPlaceId apiKey "ChIJrTLr-GyuEmsRBfy61i59si0"
+
 Once you've built your request, calling send will return a Task, which you Perform to generate your own msg types
 
 # Types
@@ -41,11 +52,14 @@ Once you've built your request, calling send will return a Task, which you Perfo
 # Building a request
 @docs requestForAddress, requestForComponents, withAddress, withComponent, withLanguage, withRegion, withBounds
 
+# Building a reverse geocoding request
+@docs reverseRequestForLatLng
+
 # Sending a request
-@docs send
+@docs send, sendReverseRequest
 
 # Inspecting a request
-@docs requestUrl
+@docs requestUrl, reverseRequestUrl
 -}
 
 import Dict exposing (Dict)
@@ -195,6 +209,7 @@ type LocationType
     | RangeInterpolated
     | GeometricCenter
     | Approximate
+    | OtherLocationType
 
 
 
@@ -212,6 +227,20 @@ type alias GeocodingRequest =
     , bounds : Maybe Viewport
     , language : Maybe String
     , region : Maybe String
+    , apiKey : ApiKey
+    }
+
+
+type ReverseRequestInfo
+    = LatLng ( Float, Float )
+    | PlaceId String
+
+
+type alias ReverseGeocodingRequest =
+    { requestInfo : ReverseRequestInfo
+    , language : Maybe String
+    , resultType : Maybe (List ComponentType)
+    , locationType : Maybe (List LocationType)
     , apiKey : ApiKey
     }
 
@@ -340,140 +369,13 @@ typeDecoder =
 
 
 mapLocationType : String -> Decoder LocationType
-mapLocationType str =
-    case str of
-        "ROOFTOP" ->
-            succeed Rooftop
-
-        "RANGE_INTERPOLATED" ->
-            succeed RangeInterpolated
-
-        "GEOMETRIC_CENTER" ->
-            succeed GeometricCenter
-
-        "APPROXIMATE" ->
-            succeed Approximate
-
-        _ ->
-            fail "unknown location type"
+mapLocationType =
+    succeed << stringToLocationType
 
 
 mapComponentType : String -> Decoder ComponentType
-mapComponentType str =
-    case str of
-        "street_address" ->
-            succeed StreetAddress
-
-        "route" ->
-            succeed Route
-
-        "intersection" ->
-            succeed Intersection
-
-        "political" ->
-            succeed Political
-
-        "country" ->
-            succeed Country
-
-        "administrative_area_level_1" ->
-            succeed AdministrativeAreaLevel1
-
-        "administrative_area_level_2" ->
-            succeed AdministrativeAreaLevel2
-
-        "administrative_area_level_3" ->
-            succeed AdministrativeAreaLevel3
-
-        "administrative_area_level_4" ->
-            succeed AdministrativeAreaLevel4
-
-        "administrative_area_level_5" ->
-            succeed AdministrativeAreaLevel5
-
-        "colloquial_area" ->
-            succeed ColloquialArea
-
-        "locality" ->
-            succeed Locality
-
-        "sublocality" ->
-            succeed Sublocality
-
-        "sublocality_level_1" ->
-            succeed SublocalityLevel1
-
-        "sublocality_level_2" ->
-            succeed SublocalityLevel2
-
-        "sublocality_level_3" ->
-            succeed SublocalityLevel3
-
-        "sublocality_level_4" ->
-            succeed SublocalityLevel4
-
-        "sublocality_level_5" ->
-            succeed SublocalityLevel5
-
-        "neighborhood" ->
-            succeed Neighborhood
-
-        "premise" ->
-            succeed Premise
-
-        "subpremise" ->
-            succeed Subpremise
-
-        "postal_code" ->
-            succeed PostalCode
-
-        "natural_feature" ->
-            succeed NaturalFeature
-
-        "airport" ->
-            succeed Airport
-
-        "park" ->
-            succeed Park
-
-        "post_box" ->
-            succeed PostBox
-
-        "street_number" ->
-            succeed StreetNumber
-
-        "floor" ->
-            succeed Floor
-
-        "room" ->
-            succeed Room
-
-        "establishment" ->
-            succeed Establishment
-
-        "point_of_interest" ->
-            succeed PointOfInterest
-
-        "parking" ->
-            succeed Parking
-
-        "postal_town" ->
-            succeed PostalTown
-
-        "bus_station" ->
-            succeed BusStation
-
-        "train_station" ->
-            succeed TrainStation
-
-        "transit_station" ->
-            succeed TransitStation
-
-        "postal_code_suffix" ->
-            succeed PostalCodeSuffix
-
-        _ ->
-            succeed OtherComponent
+mapComponentType =
+    succeed << stringToComponentType
 
 
 
@@ -490,6 +392,13 @@ geocodingUrl =
 requestUrl : GeocodingRequest -> String
 requestUrl =
     Http.url geocodingUrl << toParameters
+
+
+{-| for inspecting the request URL for testing purposes
+-}
+reverseRequestUrl : ReverseGeocodingRequest -> String
+reverseRequestUrl =
+    Http.url geocodingUrl << toReverseRequestParameters
 
 
 
@@ -544,6 +453,16 @@ requestInfoParameter info =
             [ ( "address", a ), ( "components", componentsToString c ) ]
 
 
+reverseRequestInfoParameter : ReverseRequestInfo -> ( String, String )
+reverseRequestInfoParameter info =
+    case info of
+        LatLng ( lat, lng ) ->
+            ( "latlng", [ lat, lng ] |> List.map toString |> String.join "," )
+
+        PlaceId id ->
+            ( "place_id", id )
+
+
 singleton : a -> List a
 singleton x =
     [ x ]
@@ -557,6 +476,17 @@ toParameters req =
         , Maybe.map (singleton << (,) "bounds" << viewportToString) req.bounds |> Maybe.withDefault []
         , Maybe.map (singleton << (,) "language") req.language |> Maybe.withDefault []
         , Maybe.map (singleton << (,) "region") req.region |> Maybe.withDefault []
+        ]
+
+
+toReverseRequestParameters : ReverseGeocodingRequest -> List ( String, String )
+toReverseRequestParameters req =
+    List.concat
+        [ [ ( "key", req.apiKey ) ]
+        , [ reverseRequestInfoParameter req.requestInfo ]
+        , Maybe.map (singleton << (,) "language") req.language |> Maybe.withDefault []
+        , Maybe.map (singleton << (,) "result_type" << String.join "|" << List.map componentTypeToString) req.resultType |> Maybe.withDefault []
+        , Maybe.map (singleton << (,) "location_type" << String.join "|" << List.map locationTypeToString) req.locationType |> Maybe.withDefault []
         ]
 
 
@@ -588,7 +518,7 @@ requestForAddress key address =
       , ("Toledo", Geocoding.AdministrativeAreaComponent)
       ]
 -}
-requestForComponents : ApiKey -> List ( String, Component )  -> GeocodingRequest
+requestForComponents : ApiKey -> List ( String, Component ) -> GeocodingRequest
 requestForComponents key components =
     GeocodingRequest (Components <| Dict.fromList components) Nothing Nothing Nothing key
 
@@ -619,7 +549,7 @@ withBounds ( swLat, swLng ) ( neLat, neLng ) { requestInfo, bounds, language, re
 
 {-| specify region biasing for request
 
-    Geocoding.requestForAddress apiKey "Toledo" 
+    Geocoding.requestForAddress apiKey "Toledo"
       |> Geocoding.withRegion "ES"
 -}
 withRegion : String -> GeocodingRequest -> GeocodingRequest
@@ -629,7 +559,7 @@ withRegion reg { requestInfo, bounds, language, region, apiKey } =
 
 {-| add a component filter to a request (can be called more than once for a request)
 
-    Geocoding.requestForAddress apiKey "Toledo" 
+    Geocoding.requestForAddress apiKey "Toledo"
       |> Geocoding.withComponent ("Spain", Geocoding.CountryComponent)
 -}
 withComponent : ( String, Component ) -> GeocodingRequest -> GeocodingRequest
@@ -660,6 +590,72 @@ withAddress address { requestInfo, bounds, language, region, apiKey } =
 
 
 
+-- Reverse geocoding request builders
+
+
+{-|
+  transform a reverse geocoding request into a Task
+
+    Geocoding.requestForLatLng apiKey (37.8489277,-122.4031502)
+      |> Geocoding.sendReverseRequest
+      |> Task.perform MyFailureMsg MySuccessMsg
+
+-}
+sendReverseRequest : ReverseGeocodingRequest -> Task Http.Error Response
+sendReverseRequest req =
+    Http.get responseDecoder <| reverseRequestUrl req
+
+
+{-| Build a reverse geocoding request for an location
+
+    Geocoding.reverseRequestForLatLng apiKey (37.8489277,-122.4031502)
+-}
+reverseRequestForLatLng : ApiKey -> ( Float, Float ) -> ReverseGeocodingRequest
+reverseRequestForLatLng key latLng =
+    ReverseGeocodingRequest (LatLng latLng) Nothing Nothing Nothing key
+
+
+{-| Build a reverse geocoding request for Google place_id
+
+    Geocoding.reverseRequestForLatLng apiKey "ChIJrTLr-GyuEmsRBfy61i59si0"
+-}
+reverseRequestForPlaceId : ApiKey -> String -> ReverseGeocodingRequest
+reverseRequestForPlaceId key placeId =
+    ReverseGeocodingRequest (PlaceId placeId) Nothing Nothing Nothing key
+
+
+{-| Set the language for the request
+
+  Geocoding.reverseRequestForLatLng apiKey "ChIJrTLr-GyuEmsRBfy61i59si0"
+    |> Geocoding.reverseWithLanguage("FR")
+-}
+reverseWithLanguage : String -> ReverseGeocodingRequest -> ReverseGeocodingRequest
+reverseWithLanguage lang { requestInfo, language, resultType, locationType, apiKey } =
+    ReverseGeocodingRequest requestInfo (Just lang) resultType locationType apiKey
+
+
+{-| Set the result type(s) for the request
+
+  Geocoding.reverseRequestForLatLng apiKey (37.8489277,-122.4031502)
+    |> Geocoding.withResultTypes [Country, PostalCode]
+-}
+withResultTypes : List ComponentType -> ReverseGeocodingRequest -> ReverseGeocodingRequest
+withResultTypes resultTypes { requestInfo, language, resultType, locationType, apiKey } =
+    ReverseGeocodingRequest requestInfo language (Just resultTypes) locationType apiKey
+
+
+{-| Set the location type filters for the request
+
+  Geocoding.reverseRequestForLatLng apiKey (37.8489277,-122.4031502)
+    |> Geocoding.withLocationTypes [Approximate]
+
+-}
+withLocationTypes : List LocationType -> ReverseGeocodingRequest -> ReverseGeocodingRequest
+withLocationTypes locationTypes { requestInfo, language, resultType, locationType, apiKey } =
+    ReverseGeocodingRequest requestInfo language resultType (Just locationTypes) apiKey
+
+
+
 -- request building helpers
 
 
@@ -687,3 +683,94 @@ addComponent ( val, comp ) req =
 
         AddressAndComponents address dict ->
             AddressAndComponents address <| Dict.insert val comp dict
+
+
+componentTypeList : List ( String, ComponentType )
+componentTypeList =
+    [ ( "street_address", StreetAddress )
+    , ( "route", Route )
+    , ( "intersection", Intersection )
+    , ( "political", Political )
+    , ( "country", Country )
+    , ( "administrative_area_level_1", AdministrativeAreaLevel1 )
+    , ( "administrative_area_level_2", AdministrativeAreaLevel2 )
+    , ( "administrative_area_level_3", AdministrativeAreaLevel3 )
+    , ( "administrative_area_level_4", AdministrativeAreaLevel4 )
+    , ( "administrative_area_level_5", AdministrativeAreaLevel5 )
+    , ( "colloquial_area", ColloquialArea )
+    , ( "locality", Locality )
+    , ( "sublocality", Sublocality )
+    , ( "sublocality_level_1", SublocalityLevel1 )
+    , ( "sublocality_level_2", SublocalityLevel2 )
+    , ( "sublocality_level_3", SublocalityLevel3 )
+    , ( "sublocality_level_4", SublocalityLevel4 )
+    , ( "sublocality_level_5", SublocalityLevel5 )
+    , ( "neighborhood", Neighborhood )
+    , ( "premise", Premise )
+    , ( "subpremise", Subpremise )
+    , ( "postal_code", PostalCode )
+    , ( "natural_feature", NaturalFeature )
+    , ( "airport", Airport )
+    , ( "park", Park )
+    , ( "post_box", PostBox )
+    , ( "street_number", StreetNumber )
+    , ( "floor", Floor )
+    , ( "room", Room )
+    , ( "establishment", Establishment )
+    , ( "point_of_interest", PointOfInterest )
+    , ( "parking", Parking )
+    , ( "postal_town", PostalTown )
+    , ( "bus_station", BusStation )
+    , ( "train_station", TrainStation )
+    , ( "transit_station", TransitStation )
+    , ( "postal_code_suffix", PostalCodeSuffix )
+    ]
+
+
+componentTypeMap : Dict String ComponentType
+componentTypeMap =
+    Dict.fromList componentTypeList
+
+
+stringToComponentType : String -> ComponentType
+stringToComponentType str =
+    Dict.get str componentTypeMap
+        |> Maybe.withDefault OtherComponent
+
+
+componentTypeToString : ComponentType -> String
+componentTypeToString component =
+    componentTypeList
+        |> List.filter (\( s, c ) -> component == c)
+        |> List.head
+        |> Maybe.map fst
+        |> Maybe.withDefault ""
+
+
+locationTypeList : List ( String, LocationType )
+locationTypeList =
+    [ ( "ROOFTOP", Rooftop )
+    , ( "RANGE_INTERPOLATED", RangeInterpolated )
+    , ( "GEOMETRIC_CENTER", GeometricCenter )
+    , ( "APPROXIMATE", Approximate )
+    ]
+
+
+locationTypeMap : Dict String LocationType
+locationTypeMap =
+    Dict.fromList locationTypeList
+
+
+stringToLocationType : String -> LocationType
+stringToLocationType str =
+    Dict.get str locationTypeMap
+        |> Maybe.withDefault OtherLocationType
+
+
+locationTypeToString : LocationType -> String
+locationTypeToString locationType =
+    locationTypeList
+        |> List.filter (\( s, loc ) -> locationType == loc)
+        |> List.head
+        |> Maybe.map fst
+        |> Maybe.withDefault ""

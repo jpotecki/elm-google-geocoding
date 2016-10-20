@@ -1,5 +1,5 @@
 {
-    "version": "2.0.0",
+    "version": "2.1.0",
     "summary": "Elm interface to the Google Geocoding API",
     "repository": "https://github.com/labzero/elm-google-geocoding.git",
     "license": "BSD3",
