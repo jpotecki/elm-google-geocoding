@@ -53,7 +53,7 @@ Once you've built your request, calling send will return a Task, which you Perfo
 @docs requestForAddress, requestForComponents, withAddress, withComponent, withLanguage, withRegion, withBounds
 
 # Building a reverse geocoding request
-@docs reverseRequestForLatLng
+@docs reverseRequestForLatLng, reverseRequestForPlaceId, reverseWithLanguage, withResultTypes, withLocationTypes
 
 # Sending a request
 @docs send, sendReverseRequest
@@ -626,8 +626,8 @@ reverseRequestForPlaceId key placeId =
 
 {-| Set the language for the request
 
-  Geocoding.reverseRequestForLatLng apiKey "ChIJrTLr-GyuEmsRBfy61i59si0"
-    |> Geocoding.reverseWithLanguage("FR")
+    Geocoding.reverseRequestForLatLng apiKey "ChIJrTLr-GyuEmsRBfy61i59si0"
+      |> Geocoding.reverseWithLanguage("FR")
 -}
 reverseWithLanguage : String -> ReverseGeocodingRequest -> ReverseGeocodingRequest
 reverseWithLanguage lang { requestInfo, language, resultType, locationType, apiKey } =
@@ -636,8 +636,8 @@ reverseWithLanguage lang { requestInfo, language, resultType, locationType, apiK
 
 {-| Set the result type(s) for the request
 
-  Geocoding.reverseRequestForLatLng apiKey (37.8489277,-122.4031502)
-    |> Geocoding.withResultTypes [Country, PostalCode]
+    Geocoding.reverseRequestForLatLng apiKey (37.8489277,-122.4031502)
+      |> Geocoding.withResultTypes [Country, PostalCode]
 -}
 withResultTypes : List ComponentType -> ReverseGeocodingRequest -> ReverseGeocodingRequest
 withResultTypes resultTypes { requestInfo, language, resultType, locationType, apiKey } =
@@ -646,8 +646,8 @@ withResultTypes resultTypes { requestInfo, language, resultType, locationType, a
 
 {-| Set the location type filters for the request
 
-  Geocoding.reverseRequestForLatLng apiKey (37.8489277,-122.4031502)
-    |> Geocoding.withLocationTypes [Approximate]
+    Geocoding.reverseRequestForLatLng apiKey (37.8489277,-122.4031502)
+      |> Geocoding.withLocationTypes [Approximate]
 
 -}
 withLocationTypes : List LocationType -> ReverseGeocodingRequest -> ReverseGeocodingRequest
