@@ -44,7 +44,7 @@ or for reverse geocoding:
     Geocoding.reverseRequestForLatLng apiKey ( 37.8489277, -122.4031502 )
     Geocoding.reverseRequestForPlaceId apiKey "ChIJrTLr-GyuEmsRBfy61i59si0"
 
-Once you've built your request, calling send will return a Task, which you Perform to generate your own msg types
+Once you've built your request, calling send will return a `Http.Request`, which you perform to generate your own msg types
 
 # Types
 @docs GeocodingResult, Status, Viewport, ApiKey, Component, LocationType, ComponentType, Response
@@ -65,13 +65,11 @@ Once you've built your request, calling send will return a Task, which you Perfo
 import Dict exposing (Dict)
 import Http
 import String
-import Task exposing (Task)
 import Json.Decode.Pipeline
     exposing
         ( decode
         , required
         , optional
-        , nullable
         )
 import Json.Decode
     exposing
@@ -82,7 +80,8 @@ import Json.Decode
         , fail
         , float
         , Decoder
-        , (:=)
+        , field
+        , nullable
         )
 
 
@@ -268,7 +267,7 @@ type alias ApiKey =
 
 statusDecoder : Decoder Status
 statusDecoder =
-    string `Json.Decode.andThen` mapStatus
+    string |> Json.Decode.andThen mapStatus
 
 
 mapStatus : String -> Decoder Status
@@ -347,7 +346,7 @@ viewportDecoder =
 
 locationTypeDecoder : Decoder LocationType
 locationTypeDecoder =
-    string `Json.Decode.andThen` mapLocationType
+    string |> Json.Decode.andThen mapLocationType
 
 
 geometryDecoder : Decoder Geometry
@@ -365,7 +364,7 @@ typeListDecoder =
 
 typeDecoder : Decoder ComponentType
 typeDecoder =
-    string `Json.Decode.andThen` mapComponentType
+    string |> Json.Decode.andThen mapComponentType
 
 
 mapLocationType : String -> Decoder LocationType
@@ -391,14 +390,14 @@ geocodingUrl =
 -}
 requestUrl : GeocodingRequest -> String
 requestUrl =
-    Http.url geocodingUrl << toParameters
+    url geocodingUrl << toParameters
 
 
 {-| for inspecting the request URL for testing purposes
 -}
 reverseRequestUrl : ReverseGeocodingRequest -> String
 reverseRequestUrl =
-    Http.url geocodingUrl << toReverseRequestParameters
+    url geocodingUrl << toReverseRequestParameters
 
 
 
@@ -436,8 +435,8 @@ viewportToString v =
 
 componentsToString : Dict String Component -> String
 componentsToString components =
-    String.join ("|")
-        <| Dict.foldr (\k v acc -> acc ++ [ componentToString v ++ ":" ++ k ]) [] components
+    String.join ("|") <|
+        Dict.foldr (\k v acc -> acc ++ [ componentToString v ++ ":" ++ k ]) [] components
 
 
 requestInfoParameter : RequestInfo -> List ( String, String )
@@ -490,15 +489,15 @@ toReverseRequestParameters req =
         ]
 
 
-{-| transform a request into a Task
+{-| transform a GeocodingRequest into a Cmd
 
     Geocoding.requestForAddress apiKey "77 Battery St"
-      |> Geocoding.send
-      |> Task.perform MyFailureMsg MySuccessMsg
+      |> Geocoding.send MyGeocoderResult
 -}
-send : GeocodingRequest -> Task Http.Error Response
-send req =
-    Http.get responseDecoder <| requestUrl req
+send : (Result Http.Error Response -> msg) -> GeocodingRequest -> Cmd msg
+send toMessage req =
+    Http.get (requestUrl req) responseDecoder
+        |> Http.send toMessage
 
 
 {-| Build a request for an address
@@ -594,16 +593,16 @@ withAddress address { requestInfo, bounds, language, region, apiKey } =
 
 
 {-|
-  transform a reverse geocoding request into a Task
+  transform a reverse geocoding request into a Cmd
 
     Geocoding.requestForLatLng apiKey (37.8489277,-122.4031502)
-      |> Geocoding.sendReverseRequest
-      |> Task.perform MyFailureMsg MySuccessMsg
+      |> Geocoding.sendReverseRequest MyReverseGeocoderResult
 
 -}
-sendReverseRequest : ReverseGeocodingRequest -> Task Http.Error Response
-sendReverseRequest req =
-    Http.get responseDecoder <| reverseRequestUrl req
+sendReverseRequest : (Result Http.Error Response -> msg) -> ReverseGeocodingRequest -> Cmd msg
+sendReverseRequest toMessage req =
+    Http.get (reverseRequestUrl req) responseDecoder
+        |> Http.send toMessage
 
 
 {-| Build a reverse geocoding request for an location
@@ -743,7 +742,7 @@ componentTypeToString component =
     componentTypeList
         |> List.filter (\( s, c ) -> component == c)
         |> List.head
-        |> Maybe.map fst
+        |> Maybe.map Tuple.first
         |> Maybe.withDefault ""
 
 
@@ -772,5 +771,38 @@ locationTypeToString locationType =
     locationTypeList
         |> List.filter (\( s, loc ) -> locationType == loc)
         |> List.head
-        |> Maybe.map fst
+        |> Maybe.map Tuple.first
         |> Maybe.withDefault ""
+
+
+
+-- Helpers
+--
+
+
+url : String -> List ( String, String ) -> String
+url base params =
+    if List.isEmpty params then
+        base
+    else
+        base ++ "?" ++ joinUrlEncoded params
+
+
+joinUrlEncoded : List ( String, String ) -> String
+joinUrlEncoded args =
+    String.join "&" (List.map queryPair args)
+
+
+queryPair : ( String, String ) -> String
+queryPair ( key, value ) =
+    queryEscape key ++ "=" ++ queryEscape value
+
+
+queryEscape : String -> String
+queryEscape =
+    Http.encodeUri >> replace "%20" "+"
+
+
+replace : String -> String -> String -> String
+replace old new =
+    String.split old >> String.join new
