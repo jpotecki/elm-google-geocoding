@@ -4,8 +4,6 @@ An Elm interface to the [Google Geocoding API](https://developers.google.com/map
 
 This provides a pipeline friendly, builder-like API. It also provides Elm types for many of Google's JSON structures.
 
-In the end it produces a `Task`, so you'll need to create your own `msg` types to tag success and failure when `perform`-ing the task
-
 Basic usage:
 
 ```elm
@@ -17,14 +15,12 @@ apiKey : String
 apiKey = "your_google_api_key"
 
 type Msg
-  = GeocodingSuccess Geocoding.Response
-  | GeocodingFailure Http.Error
+  = MyGeocoderResult (Result Http.Error Geocoder.Response)
 
 geocodeThis : String -> Cmd Msg
 geocodeThis str =
   Geocoding.requestForAddress apiKey str
-    |> Geocoding.send
-    |> Task.perform GeocodingFailure GeocodingSuccess
+    |> Geocoding.send MyGeocoderResult    
 ```
 
 Take a look at the [tests](tests/Tests.elm) for examples of building requests with other parameters
