@@ -37,8 +37,8 @@ testInitializeWithAddressOnly =
         expected =
             "https://maps.googleapis.com/maps/api/geocode/json?key=ABCD&address=77+Battery+St."
     in
-        test "initializeWithAddressOnly"
-            <| \() -> Expect.equal (G.requestUrl request) expected
+        test "initializeWithAddressOnly" <|
+            \() -> Expect.equal (G.requestUrl request) expected
 
 
 testInitializeWithComponentsOnly : Test
@@ -50,8 +50,8 @@ testInitializeWithComponentsOnly =
         expected =
             "https://maps.googleapis.com/maps/api/geocode/json?key=ABCD&components=country%3ASpain"
     in
-        test "initializeWithComponentsOnly"
-            <| \() -> Expect.equal (G.requestUrl request) expected
+        test "initializeWithComponentsOnly" <|
+            \() -> Expect.equal (G.requestUrl request) expected
 
 
 testWithAddress : Test
@@ -64,8 +64,8 @@ testWithAddress =
         expected =
             "https://maps.googleapis.com/maps/api/geocode/json?key=ABCD&address=Toledo&components=country%3ASpain"
     in
-        test "withAddress"
-            <| \() -> Expect.equal (G.requestUrl request) expected
+        test "withAddress" <|
+            \() -> Expect.equal (G.requestUrl request) expected
 
 
 testWithComponents : Test
@@ -79,8 +79,8 @@ testWithComponents =
         expected =
             "https://maps.googleapis.com/maps/api/geocode/json?key=ABCD&address=Toledo&components=administrative_area%3AToledo%7Ccountry%3ASpain"
     in
-        test "withComponents"
-            <| \() -> Expect.equal (G.requestUrl request) expected
+        test "withComponents" <|
+            \() -> Expect.equal (G.requestUrl request) expected
 
 
 testWithRegion : Test
@@ -93,8 +93,8 @@ testWithRegion =
         expected =
             "https://maps.googleapis.com/maps/api/geocode/json?key=ABCD&address=Toledo&region=ES"
     in
-        test "withRegion"
-            <| \() -> Expect.equal (G.requestUrl request) expected
+        test "withRegion" <|
+            \() -> Expect.equal (G.requestUrl request) expected
 
 
 testWithLanguage : Test
@@ -107,8 +107,8 @@ testWithLanguage =
         expected =
             "https://maps.googleapis.com/maps/api/geocode/json?key=ABCD&address=Toledo&language=ES"
     in
-        test "withLanguage"
-            <| \() -> Expect.equal (G.requestUrl request) expected
+        test "withLanguage" <|
+            \() -> Expect.equal (G.requestUrl request) expected
 
 
 testWithBounds : Test
@@ -121,8 +121,8 @@ testWithBounds =
         expected =
             "https://maps.googleapis.com/maps/api/geocode/json?key=ABCD&address=Belmont&bounds=41%2C-74%7C42%2C-70"
     in
-        test "withBounds"
-            <| \() -> Expect.equal (G.requestUrl request) expected
+        test "withBounds" <|
+            \() -> Expect.equal (G.requestUrl request) expected
 
 
 testReverseForLatLng : Test
@@ -134,8 +134,8 @@ testReverseForLatLng =
         expected =
             "https://maps.googleapis.com/maps/api/geocode/json?key=ABCD&latlng=37.8489277%2C-122.4031502"
     in
-        test "reverseForLatLng"
-            <| \() -> Expect.equal (G.reverseRequestUrl request) expected
+        test "reverseForLatLng" <|
+            \() -> Expect.equal (G.reverseRequestUrl request) expected
 
 
 testReverseForPlaceId : Test
@@ -147,8 +147,8 @@ testReverseForPlaceId =
         expected =
             "https://maps.googleapis.com/maps/api/geocode/json?key=ABCD&place_id=ChIJIQBpAG2ahYAR_6128GcTUEo"
     in
-        test "reverseForPlaceId"
-            <| \() -> Expect.equal (G.reverseRequestUrl request) expected
+        test "reverseForPlaceId" <|
+            \() -> Expect.equal (G.reverseRequestUrl request) expected
 
 
 testReverseWithLanguage : Test
@@ -161,8 +161,8 @@ testReverseWithLanguage =
         expected =
             "https://maps.googleapis.com/maps/api/geocode/json?key=ABCD&latlng=37.8489277%2C-122.4031502&language=FR"
     in
-        test "reverseWithLanguage"
-            <| \() -> Expect.equal (G.reverseRequestUrl request) expected
+        test "reverseWithLanguage" <|
+            \() -> Expect.equal (G.reverseRequestUrl request) expected
 
 
 testReverseWithResultTypes : Test
@@ -175,8 +175,8 @@ testReverseWithResultTypes =
         expected =
             "https://maps.googleapis.com/maps/api/geocode/json?key=ABCD&latlng=37.8489277%2C-122.4031502&result_type=street_address%7Ccountry"
     in
-        test "reverseWithResultTypes"
-            <| \() -> Expect.equal (G.reverseRequestUrl request) expected
+        test "reverseWithResultTypes" <|
+            \() -> Expect.equal (G.reverseRequestUrl request) expected
 
 
 testReverseWithLocationTypes : Test
@@ -189,5 +189,5 @@ testReverseWithLocationTypes =
         expected =
             "https://maps.googleapis.com/maps/api/geocode/json?key=ABCD&latlng=37.8489277%2C-122.4031502&location_type=ROOFTOP%7CAPPROXIMATE"
     in
-        test "reverseWithLocationTypes"
-            <| \() -> Expect.equal (G.reverseRequestUrl request) expected
+        test "reverseWithLocationTypes" <|
+            \() -> Expect.equal (G.reverseRequestUrl request) expected
