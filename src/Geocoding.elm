@@ -15,7 +15,7 @@ module Geocoding
         , withLocationTypes
         , sendReverseRequest
         , GeocodingResult
-        , Status
+        , Status(..)
         , Viewport
         , ApiKey
         , Component(..)
