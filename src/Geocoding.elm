@@ -19,6 +19,7 @@ module Geocoding
         , Viewport
         , ApiKey
         , Component(..)
+        , AddressComponent (..)
         , LocationType(..)
         , ComponentType(..)
         , Response
