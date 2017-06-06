@@ -19,7 +19,7 @@ module Geocoding
         , Viewport
         , ApiKey
         , Component(..)
-        , AddressComponent (..)
+        , AddressComponent
         , LocationType(..)
         , ComponentType(..)
         , Response
@@ -48,7 +48,7 @@ or for reverse geocoding:
 Once you've built your request, calling send will return a `Http.Request`, which you perform to generate your own msg types
 
 # Types
-@docs GeocodingResult, Status, Viewport, ApiKey, Component, LocationType, ComponentType, Response
+@docs GeocodingResult, Status, Viewport, ApiKey, Component, LocationType, ComponentType, Response, AddressComponent
 
 # Building a request
 @docs requestForAddress, requestForComponents, withAddress, withComponent, withLanguage, withRegion, withBounds
